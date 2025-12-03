@@ -1,49 +1,52 @@
 import tkinter as tk
-from PIL import Image, ImageTk, ImageDraw, ImageFont
 import random
-from palabra_juego import PalabraJuego
 
 class VentanaJuego(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         
-        # Ocultar la ventana principal temporalmente
-        parent.withdraw()
-        
-        # Inicializar juego
-        self.juego = PalabraJuego()
-        
-        # Configuración de colores
-        self.COLOR_FONDO = "#0d1117"
-        self.COLOR_TARJETA = "#161b22"
-        self.COLOR_PRIMARIO = "#238636"
-        self.COLOR_SECUNDARIO = "#f78166"
-        self.COLOR_ACENTO = "#58a6ff"
-        self.COLOR_TEXTO = "#c9d1d9"
-        self.COLOR_TEXTO_SECUNDARIO = "#8b949e"
-        self.COLOR_EXITO = "#3fb950"
-        self.COLOR_ERROR = "#f85149"
-        self.COLOR_ADVERTENCIA = "#d29922"
-        self.COLOR_BORDE = "#30363d"
+        # Configuración de estilo
+        self.estilo = {
+            "bg_color": "#0d1117",
+            "card_color": "#161b22",
+            "primary": "#238636",
+            "accent": "#f78166",
+            "text_color": "#c9d1d9",
+            "border_color": "#30363d",
+            "exito": "#3fb950",
+            "error": "#f85149",
+            "advertencia": "#d29922"
+        }
         
         # Configuración ventana
+        self.title("🎮 Word Challenge - Juego en Curso")
         self.ANCHO = 1200
         self.ALTO = 800
-        self.title("🎮 Word Challenge - Juego en Curso")
         
         # Centrar ventana
-        self.centrar_ventana()
+        pantalla_ancho = self.winfo_screenwidth()
+        pantalla_alto = self.winfo_screenheight()
+        x = (pantalla_ancho // 2) - (self.ANCHO // 2)
+        y = (pantalla_alto // 2) - (self.ALTO // 2)
         
-        self.geometry(f"{self.ANCHO}x{self.ALTO}+{self.x}+{self.y}")
+        self.geometry(f"{self.ANCHO}x{self.ALTO}+{x}+{y}")
         self.resizable(False, False)
-        self.configure(bg=self.COLOR_FONDO)
-        
-        # Crear fondo
-        self.create_background()
+        self.configure(bg=self.estilo["bg_color"])
         
         # Frame principal
-        self.main_frame = tk.Frame(self, bg=self.COLOR_FONDO)
+        self.main_frame = tk.Frame(self, bg=self.estilo["bg_color"])
         self.main_frame.pack(expand=True, fill="both", padx=30, pady=20)
+        
+        # Palabras del juego
+        self.palabras = [
+            "PYTHON", "PROGRAMACION", "COMPUTADORA", "ALGORITMO", "VARIABLE",
+            "FUNCION", "OBJETO", "HERENCIA", "INTERFAZ", "DATABASE",
+            "INTERNET", "SISTEMA", "APLICACION", "DESARROLLO", "LENGUAJE",
+            "FRAMEWORK", "BIBLIOTECA", "MODULO", "CLASE", "METODO"
+        ]
+        
+        # Inicializar juego
+        self.iniciar_juego()
         
         # Crear interfaz
         self.crear_cabecera()
@@ -55,348 +58,311 @@ class VentanaJuego(tk.Toplevel):
         
         # Configurar eventos
         self.bind("<Return>", lambda e: self.verificar_letra())
-        self.protocol("WM_DELETE_WINDOW", lambda: self.cerrar_ventana(parent))
         
-        # Inicializar interfaz
-        self.actualizar_interfaz()
+        # Dar foco a la ventana
+        self.focus_set()
     
-    def centrar_ventana(self):
-        """Centra la ventana en la pantalla"""
-        pantalla_ancho = self.winfo_screenwidth()
-        pantalla_alto = self.winfo_screenheight()
-        self.x = (pantalla_ancho // 2) - (self.ANCHO // 2)
-        self.y = (pantalla_alto // 2) - (self.ALTO // 2)
-    
-    def create_background(self):
-        """Crea un fondo para el juego"""
-        try:
-            # Crear fondo programáticamente
-            bg_img = Image.new('RGB', (self.ANCHO, self.ALTO), color=self.COLOR_FONDO)
-            draw = ImageDraw.Draw(bg_img)
-            
-            # Patrón sutil
-            for i in range(0, self.ANCHO, 100):
-                for j in range(0, self.ALTO, 100):
-                    # Puntos de conexión
-                    draw.ellipse([i+40, j+40, i+45, j+45], fill=(86, 169, 253, 30))
-            
-            self.bg_photo = ImageTk.PhotoImage(bg_img)
-            
-            # Mostrar fondo
-            self.bg_label = tk.Label(self, image=self.bg_photo)
-            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-            
-        except Exception as e:
-            print(f"Error creando fondo: {e}")
-            self.configure(bg=self.COLOR_FONDO)
+    def iniciar_juego(self):
+        """Inicializa un nuevo juego"""
+        self.palabra_secreta = random.choice(self.palabras)
+        self.progreso = ["_"] * len(self.palabra_secreta)
+        self.intentos = 6
+        self.intentos_totales = 6
+        self.letras_usadas = []
+        self.juego_activo = True
     
     def crear_cabecera(self):
         """Crea la cabecera del juego"""
-        header_frame = tk.Frame(self.main_frame, bg=self.COLOR_TARJETA)
+        header_frame = tk.Frame(self.main_frame, bg=self.estilo["card_color"])
         header_frame.pack(fill="x", pady=(0, 20))
         
         # Título
-        title_frame = tk.Frame(header_frame, bg=self.COLOR_TARJETA)
+        title_frame = tk.Frame(header_frame, bg=self.estilo["card_color"])
         title_frame.pack(side="left", padx=30, pady=15)
         
         title_label = tk.Label(
             title_frame,
             text="🎮 WORD CHALLENGE",
             font=("Arial Black", 28, "bold"),
-            fg=self.COLOR_ACENTO,
-            bg=self.COLOR_TARJETA
+            fg=self.estilo["accent"],
+            bg=self.estilo["card_color"]
         )
         title_label.pack(anchor="w")
         
         subtitle_label = tk.Label(
             title_frame,
-            text="Juego en curso",
+            text="Juego en curso - Adivina la palabra",
             font=("Segoe UI", 14),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_TARJETA
+            fg=self.estilo["text_color"],
+            bg=self.estilo["card_color"]
         )
         subtitle_label.pack(anchor="w", pady=(5, 0))
         
         # Contador de intentos
-        attempts_frame = tk.Frame(header_frame, bg=self.COLOR_TARJETA)
+        attempts_frame = tk.Frame(header_frame, bg=self.estilo["card_color"])
         attempts_frame.pack(side="right", padx=30, pady=15)
         
         self.lbl_intentos = tk.Label(
             attempts_frame,
-            text="",
+            text=f"❤️  {self.intentos}/{self.intentos_totales} INTENTOS",
             font=("Segoe UI", 20, "bold"),
-            fg=self.COLOR_TEXTO,
-            bg=self.COLOR_TARJETA
+            fg=self.estilo["text_color"],
+            bg=self.estilo["card_color"]
         )
         self.lbl_intentos.pack()
     
     def crear_seccion_palabra(self):
         """Crea la sección donde se muestra la palabra"""
-        word_frame = tk.Frame(self.main_frame, bg=self.COLOR_FONDO)
-        word_frame.pack(fill="x", pady=20)
+        word_frame = tk.Frame(self.main_frame, bg=self.estilo["bg_color"])
+        word_frame.pack(fill="x", pady=30)
         
         # Frame para las letras
-        self.letters_container = tk.Frame(word_frame, bg=self.COLOR_FONDO)
+        self.letters_container = tk.Frame(word_frame, bg=self.estilo["bg_color"])
         self.letters_container.pack()
+        
+        # Crear display de letras
+        self.actualizar_display_palabra()
         
         # Indicador de longitud
         self.lbl_longitud = tk.Label(
             word_frame,
-            text="",
+            text=f"📏 Palabra de {len(self.palabra_secreta)} letras",
             font=("Segoe UI", 14),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_FONDO
+            fg=self.estilo["text_color"],
+            bg=self.estilo["bg_color"]
         )
         self.lbl_longitud.pack(pady=(20, 0))
-        
-        # Inicializar lista de labels de letras
-        self.letra_labels = []
     
     def crear_seccion_progreso(self):
         """Crea la barra de progreso"""
-        progress_frame = tk.Frame(self.main_frame, bg=self.COLOR_FONDO)
-        progress_frame.pack(fill="x", pady=10)
+        progress_frame = tk.Frame(self.main_frame, bg=self.estilo["bg_color"])
+        progress_frame.pack(fill="x", pady=20)
         
         # Texto de progreso
-        self.lbl_progreso_texto = tk.Label(
+        self.lbl_progreso = tk.Label(
             progress_frame,
             text="Progreso: 0%",
             font=("Segoe UI", 12),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_FONDO
+            fg=self.estilo["text_color"],
+            bg=self.estilo["bg_color"]
         )
-        self.lbl_progreso_texto.pack(anchor="w", pady=(0, 5))
+        self.lbl_progreso.pack(anchor="w", pady=(0, 8))
         
-        # Contenedor de la barra de progreso
-        self.progress_container = tk.Frame(
+        # Contenedor de la barra
+        progress_bg = tk.Frame(
             progress_frame,
-            bg=self.COLOR_BORDE,
+            bg=self.estilo["border_color"],
             height=10,
             relief="flat"
         )
-        self.progress_container.pack(fill="x")
+        progress_bg.pack(fill="x")
         
-        # Barra de progreso (inicialmente vacía)
+        # Barra de progreso
         self.progress_bar = tk.Frame(
-            self.progress_container,
-            bg=self.COLOR_PRIMARIO,
+            progress_bg,
+            bg=self.estilo["primary"],
             height=10
         )
         self.progress_bar.place(x=0, y=0, width=0)
     
     def crear_seccion_entrada(self):
         """Crea la sección de entrada de letras"""
-        input_frame = tk.Frame(self.main_frame, bg=self.COLOR_FONDO)
+        input_frame = tk.Frame(self.main_frame, bg=self.estilo["bg_color"])
         input_frame.pack(fill="x", pady=30)
         
         # Frame para centrar
-        input_center = tk.Frame(input_frame, bg=self.COLOR_FONDO)
+        input_center = tk.Frame(input_frame, bg=self.estilo["bg_color"])
         input_center.pack()
         
+        # Etiqueta
         tk.Label(
             input_center,
             text="INGRESA UNA LETRA:",
-            font=("Segoe UI", 14, "bold"),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_FONDO
+            font=("Segoe UI", 16, "bold"),
+            fg=self.estilo["text_color"],
+            bg=self.estilo["bg_color"]
         ).pack(pady=(0, 15))
         
         # Frame para entrada y botón
-        entry_container = tk.Frame(input_center, bg=self.COLOR_FONDO)
-        entry_container.pack()
+        entry_frame = tk.Frame(input_center, bg=self.estilo["bg_color"])
+        entry_frame.pack()
         
         # Entrada de letra
         self.entry_letra = tk.Entry(
-            entry_container,
+            entry_frame,
             font=("Segoe UI", 36, "bold"),
             width=3,
             justify="center",
             bd=0,
             relief="flat",
-            fg=self.COLOR_TEXTO,
-            bg=self.COLOR_TARJETA,
-            insertbackground=self.COLOR_ACENTO,
+            fg=self.estilo["text_color"],
+            bg=self.estilo["card_color"],
+            insertbackground=self.estilo["accent"],
             highlightthickness=2,
-            highlightbackground=self.COLOR_BORDE,
-            highlightcolor=self.COLOR_PRIMARIO
+            highlightbackground=self.estilo["border_color"],
+            highlightcolor=self.estilo["primary"]
         )
         self.entry_letra.pack(side="left", padx=(0, 20))
         self.entry_letra.focus_set()
         
+        # Validar que solo se ingrese una letra
+        self.entry_letra.bind('<KeyRelease>', self.validar_entrada)
+        
         # Botón verificar
         self.btn_verificar = tk.Button(
-            entry_container,
+            entry_frame,
             text="✓ VERIFICAR",
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 18, "bold"),
             fg="white",
-            bg=self.COLOR_PRIMARIO,
+            bg=self.estilo["primary"],
             activeforeground="white",
-            activebackground=self.COLOR_ACENTO,
+            activebackground=self.estilo["accent"],
             command=self.verificar_letra,
-            width=14,
+            width=15,
             height=1,
             cursor="hand2",
             relief="flat",
             bd=0,
-            padx=20
+            padx=25
         )
         self.btn_verificar.pack(side="left")
         
         # Efecto hover
         self.btn_verificar.bind("<Enter>", 
-            lambda e: self.btn_verificar.config(bg=self.COLOR_ACENTO))
+            lambda e: self.btn_verificar.config(bg=self.estilo["accent"]))
         self.btn_verificar.bind("<Leave>", 
-            lambda e: self.btn_verificar.config(bg=self.COLOR_PRIMARIO))
+            lambda e: self.btn_verificar.config(bg=self.estilo["primary"]))
+    
+    def validar_entrada(self, event=None):
+        """Valida que solo se ingrese una letra"""
+        texto = self.entry_letra.get().upper()
+        if len(texto) > 1:
+            # Mantener solo el último carácter
+            self.entry_letra.delete(0, tk.END)
+            self.entry_letra.insert(0, texto[-1])
+        elif texto and not texto.isalpha():
+            # Si no es letra, limpiar
+            self.entry_letra.delete(0, tk.END)
     
     def crear_seccion_estadisticas(self):
         """Crea la sección de estadísticas"""
-        stats_frame = tk.Frame(self.main_frame, bg=self.COLOR_FONDO)
+        stats_frame = tk.Frame(self.main_frame, bg=self.estilo["bg_color"])
         stats_frame.pack(fill="x", pady=20)
         
-        # Frame para estadísticas en grid
-        stats_grid = tk.Frame(stats_frame, bg=self.COLOR_FONDO)
-        stats_grid.pack()
-        
-        # Letras usadas (columna izquierda)
-        letters_card = tk.Frame(
-            stats_grid,
-            bg=self.COLOR_TARJETA,
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=self.COLOR_BORDE,
-            padx=20,
-            pady=15
-        )
-        letters_card.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        
-        tk.Label(
-            letters_card,
-            text="📝 LETRAS USADAS",
-            font=("Segoe UI", 12, "bold"),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_TARJETA
-        ).pack(anchor="w", pady=(0, 10))
-        
-        self.lbl_usadas = tk.Label(
-            letters_card,
-            text="Ninguna",
-            font=("Segoe UI", 14),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_TARJETA,
-            wraplength=300,
-            justify="left"
-        )
-        self.lbl_usadas.pack(anchor="w")
-        
-        # Mensajes (columna central)
-        message_card = tk.Frame(
-            stats_grid,
-            bg=self.COLOR_TARJETA,
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=self.COLOR_BORDE,
-            padx=20,
-            pady=15
-        )
-        message_card.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-        
-        tk.Label(
-            message_card,
-            text="💡 MENSAJE",
-            font=("Segoe UI", 12, "bold"),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_TARJETA
-        ).pack(anchor="w", pady=(0, 10))
-        
-        self.lbl_mensaje = tk.Label(
-            message_card,
-            text="¡Comienza adivinando!",
-            font=("Segoe UI", 14),
-            fg=self.COLOR_EXITO,
-            bg=self.COLOR_TARJETA,
-            wraplength=300,
-            justify="left"
-        )
-        self.lbl_mensaje.pack(anchor="w")
-        
-        # Estadísticas (columna derecha)
-        stats_card = tk.Frame(
-            stats_grid,
-            bg=self.COLOR_TARJETA,
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=self.COLOR_BORDE,
-            padx=20,
-            pady=15
-        )
-        stats_card.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
-        
-        tk.Label(
-            stats_card,
-            text="📊 ESTADÍSTICAS",
-            font=("Segoe UI", 12, "bold"),
-            fg=self.COLOR_TEXTO_SECUNDARIO,
-            bg=self.COLOR_TARJETA
-        ).pack(anchor="w", pady=(0, 10))
-        
-        self.lbl_estadisticas = tk.Label(
-            stats_card,
-            text="",
-            font=("Segoe UI", 13),
-            fg=self.COLOR_TEXTO,
-            bg=self.COLOR_TARJETA,
-            justify="left"
-        )
-        self.lbl_estadisticas.pack(anchor="w")
+        # Crear 3 columnas
+        for i, (titulo, variable) in enumerate([
+            ("📝 LETRAS USADAS", "lbl_usadas"),
+            ("💡 MENSAJE", "lbl_mensaje"),
+            ("📊 ESTADÍSTICAS", "lbl_detalles")
+        ]):
+            card = tk.Frame(
+                stats_frame,
+                bg=self.estilo["card_color"],
+                relief="flat",
+                highlightthickness=1,
+                highlightbackground=self.estilo["border_color"],
+                padx=15,
+                pady=15
+            )
+            card.pack(side="left", expand=True, fill="both", padx=5)
+            
+            # Título de la tarjeta
+            tk.Label(
+                card,
+                text=titulo,
+                font=("Segoe UI", 12, "bold"),
+                fg=self.estilo["text_color"],
+                bg=self.estilo["card_color"]
+            ).pack(anchor="w", pady=(0, 8))
+            
+            # Contenido de la tarjeta
+            if i == 0:  # Letras usadas
+                self.lbl_usadas = tk.Label(
+                    card,
+                    text="Ninguna",
+                    font=("Segoe UI", 13),
+                    fg=self.estilo["text_color"],
+                    bg=self.estilo["card_color"],
+                    wraplength=250,
+                    justify="left"
+                )
+                self.lbl_usadas.pack(anchor="w")
+            
+            elif i == 1:  # Mensaje
+                self.lbl_mensaje = tk.Label(
+                    card,
+                    text="¡Comienza adivinando!",
+                    font=("Segoe UI", 13),
+                    fg=self.estilo["exito"],
+                    bg=self.estilo["card_color"],
+                    wraplength=250,
+                    justify="left"
+                )
+                self.lbl_mensaje.pack(anchor="w")
+            
+            elif i == 2:  # Estadísticas
+                self.lbl_detalles = tk.Label(
+                    card,
+                    text="",
+                    font=("Segoe UI", 12),
+                    fg=self.estilo["text_color"],
+                    bg=self.estilo["card_color"],
+                    justify="left"
+                )
+                self.lbl_detalles.pack(anchor="w")
     
     def crear_seccion_controles(self):
         """Crea la sección de controles"""
-        controls_frame = tk.Frame(self.main_frame, bg=self.COLOR_FONDO)
+        controls_frame = tk.Frame(self.main_frame, bg=self.estilo["bg_color"])
         controls_frame.pack(fill="x", pady=(30, 0))
         
-        # Botón reiniciar (oculto inicialmente)
-        self.btn_reiniciar = tk.Button(
-            controls_frame,
-            text="🔄 JUGAR DE NUEVO",
-            font=("Segoe UI", 14, "bold"),
-            fg="white",
-            bg=self.COLOR_SECUNDARIO,
-            activeforeground="white",
-            activebackground="#e86955",
-            command=self.reiniciar_juego,
-            width=20,
-            height=2,
-            cursor="hand2",
-            relief="flat",
-            bd=0,
-            padx=20
-        )
-        # Se mostrará cuando termine el juego
-        
         # Botón volver al menú
-        self.btn_volver_menu = tk.Button(
+        self.btn_volver = tk.Button(
             controls_frame,
             text="← VOLVER AL MENÚ",
-            font=("Segoe UI", 12, "bold"),
+            font=("Segoe UI", 14, "bold"),
             fg="white",
-            bg=self.COLOR_BORDE,
+            bg=self.estilo["border_color"],
             activeforeground="white",
-            activebackground=self.COLOR_TEXTO_SECUNDARIO,
-            command=lambda: self.cerrar_ventana(self.master),
+            activebackground=self.estilo["text_color"],
+            command=self.destroy,
             width=18,
             height=1,
             cursor="hand2",
             relief="flat",
             bd=0,
-            padx=15
+            padx=20
         )
-        self.btn_volver_menu.pack(side="left", padx=10)
+        self.btn_volver.pack(side="left", padx=10)
         
-        # Efecto hover
-        self.btn_volver_menu.bind("<Enter>", 
-            lambda e: self.btn_volver_menu.config(bg=self.COLOR_TEXTO_SECUNDARIO))
-        self.btn_volver_menu.bind("<Leave>", 
-            lambda e: self.btn_volver_menu.config(bg=self.COLOR_BORDE))
+        # Botón reiniciar (inicialmente oculto)
+        self.btn_reiniciar = tk.Button(
+            controls_frame,
+            text="🔄 JUGAR DE NUEVO",
+            font=("Segoe UI", 14, "bold"),
+            fg="white",
+            bg=self.estilo["accent"],
+            activeforeground="white",
+            activebackground="#e86955",
+            command=self.reiniciar_juego,
+            width=18,
+            height=1,
+            cursor="hand2",
+            relief="flat",
+            bd=0,
+            padx=20
+        )
+        
+        # Efectos hover
+        self.btn_volver.bind("<Enter>", 
+            lambda e: self.btn_volver.config(bg=self.estilo["text_color"]))
+        self.btn_volver.bind("<Leave>", 
+            lambda e: self.btn_volver.config(bg=self.estilo["border_color"]))
+        
+        self.btn_reiniciar.bind("<Enter>", 
+            lambda e: self.btn_reiniciar.config(bg="#e86955"))
+        self.btn_reiniciar.bind("<Leave>", 
+            lambda e: self.btn_reiniciar.config(bg=self.estilo["accent"]))
     
     def actualizar_display_palabra(self):
         """Actualiza el display visual de la palabra"""
@@ -404,180 +370,216 @@ class VentanaJuego(tk.Toplevel):
         for widget in self.letters_container.winfo_children():
             widget.destroy()
         
-        self.letra_labels = []
-        
         # Crear un cuadro para cada letra
-        for i, letra in enumerate(self.juego.progreso):
+        for i, letra in enumerate(self.progreso):
             if letra == "_":
                 # Cuadro vacío
                 cuadro = tk.Frame(
                     self.letters_container,
-                    width=60,
-                    height=70,
-                    bg=self.COLOR_TARJETA,
+                    width=65,
+                    height=75,
+                    bg=self.estilo["card_color"],
                     highlightthickness=2,
-                    highlightbackground=self.COLOR_BORDE
+                    highlightbackground=self.estilo["border_color"]
                 )
                 cuadro.pack(side="left", padx=5, pady=5)
                 cuadro.pack_propagate(False)
                 
-                lbl = tk.Label(
+                tk.Label(
                     cuadro,
                     text="",
-                    font=("Segoe UI", 24, "bold"),
-                    fg=self.COLOR_TEXTO,
-                    bg=self.COLOR_TARJETA
-                )
-                lbl.pack(expand=True)
+                    font=("Segoe UI", 26, "bold"),
+                    fg=self.estilo["text_color"],
+                    bg=self.estilo["card_color"]
+                ).pack(expand=True)
             else:
                 # Cuadro con letra adivinada
                 cuadro = tk.Frame(
                     self.letters_container,
-                    width=60,
-                    height=70,
-                    bg=self.COLOR_PRIMARIO,
+                    width=65,
+                    height=75,
+                    bg=self.estilo["primary"],
                     highlightthickness=2,
-                    highlightbackground=self.COLOR_PRIMARIO
+                    highlightbackground=self.estilo["primary"]
                 )
                 cuadro.pack(side="left", padx=5, pady=5)
                 cuadro.pack_propagate(False)
                 
-                lbl = tk.Label(
+                tk.Label(
                     cuadro,
                     text=letra,
-                    font=("Segoe UI", 24, "bold"),
+                    font=("Segoe UI", 26, "bold"),
                     fg="white",
-                    bg=self.COLOR_PRIMARIO
-                )
-                lbl.pack(expand=True)
-            
-            self.letra_labels.append(lbl)
+                    bg=self.estilo["primary"]
+                ).pack(expand=True)
     
-    def actualizar_interfaz(self):
-        """Actualiza todos los elementos de la interfaz"""
-        # Actualizar display de palabra
-        self.actualizar_display_palabra()
-        
-        # Actualizar información
-        self.lbl_longitud.config(text=f"📏 Palabra de {self.juego.get_longitud()} letras")
-        
-        intentos = self.juego.get_intentos_restantes()
-        total_intentos = self.juego.get_intentos_totales()
-        self.lbl_intentos.config(text=f"❤️  {intentos}/{total_intentos} INTENTOS")
+    def actualizar_estadisticas(self):
+        """Actualiza las estadísticas del juego"""
+        # Calcular progreso
+        letras_adivinadas = sum(1 for l in self.progreso if l != '_')
+        total_letras = len(self.palabra_secreta)
+        porcentaje = int((letras_adivinadas / total_letras) * 100) if total_letras > 0 else 0
         
         # Actualizar barra de progreso
-        porcentaje = self.juego.get_progreso_porcentaje()
-        self.lbl_progreso_texto.config(text=f"Progreso: {porcentaje}%")
+        self.lbl_progreso.config(text=f"Progreso: {porcentaje}%")
         
-        # Actualizar ancho de barra de progreso
-        if self.progress_container.winfo_width() > 0:
-            ancho_total = self.progress_container.winfo_width()
-            ancho_progreso = (ancho_total * porcentaje) // 100
-            self.progress_bar.config(width=ancho_progreso)
+        # Actualizar ancho de barra
+        if self.progress_bar.master.winfo_width() > 0:
+            ancho_total = self.progress_bar.master.winfo_width()
+            ancho_actual = (ancho_total * porcentaje) // 100
+            self.progress_bar.config(width=ancho_actual)
         
-        # Actualizar estadísticas
-        self.lbl_usadas.config(
-            text=self.juego.get_letras_usadas() or "Ninguna",
-            fg=self.COLOR_TEXTO if self.juego.letras_usadas else self.COLOR_TEXTO_SECUNDARIO
-        )
+        # Actualizar detalles
+        detalles = f"""• Letras: {letras_adivinadas}/{total_letras}
+• Restantes: {self.progreso.count('_')}
+• Intentos usados: {self.intentos_totales - self.intentos}
+• Progreso: {porcentaje}%"""
         
-        # Actualizar estadísticas rápidas
-        estadisticas_texto = f"""
-        • Letras adivinadas: {sum(1 for l in self.juego.progreso if l != '_')}
-        • Letras restantes: {self.juego.progreso.count('_')}
-        • Intentos usados: {total_intentos - intentos}
-        • Porcentaje: {porcentaje}%
-        """
-        self.lbl_estadisticas.config(text=estadisticas_texto.strip())
+        self.lbl_detalles.config(text=detalles)
         
-        # Habilitar controles
-        self.entry_letra.config(state="normal", fg=self.COLOR_TEXTO)
-        self.btn_verificar.config(state="normal", bg=self.COLOR_PRIMARIO)
-        self.entry_letra.focus_set()
-        
-        # Ocultar botón reiniciar
-        self.btn_reiniciar.place_forget()
+        # Actualizar letras usadas
+        if self.letras_usadas:
+            self.lbl_usadas.config(
+                text=", ".join(self.letras_usadas),
+                fg=self.estilo["text_color"]
+            )
+        else:
+            self.lbl_usadas.config(
+                text="Ninguna",
+                fg=self.estilo["text_color"]
+            )
     
     def verificar_letra(self):
         """Verifica la letra ingresada por el jugador"""
-        if self.juego.intentos <= 0:
-            self.lbl_mensaje.config(text="El juego terminó. ¡Reinicia!", fg=self.COLOR_ERROR)
+        if not self.juego_activo:
             return
         
-        letra = self.entry_letra.get()
+        letra = self.entry_letra.get().upper().strip()
         self.entry_letra.delete(0, tk.END)
         
+        # Validaciones
         if not letra:
-            self.lbl_mensaje.config(text="Por favor, ingresa una letra", fg=self.COLOR_ADVERTENCIA)
+            self.lbl_mensaje.config(text="Por favor, ingresa una letra", 
+                                   fg=self.estilo["advertencia"])
             return
         
-        # Usar la lógica del juego
-        acierto, mensaje, es_ganador = self.juego.comprobar_letra(letra)
+        if len(letra) != 1:
+            self.lbl_mensaje.config(text="Ingresa solo UNA letra", 
+                                   fg=self.estilo["advertencia"])
+            return
         
-        # Actualizar mensaje
-        if "ya fue usada" in mensaje or "Ingresa solo" in mensaje:
-            color = self.COLOR_ADVERTENCIA
-        elif acierto:
-            color = self.COLOR_EXITO
+        if not letra.isalpha():
+            self.lbl_mensaje.config(text="Ingresa una letra válida", 
+                                   fg=self.estilo["advertencia"])
+            return
+        
+        if letra in self.letras_usadas:
+            self.lbl_mensaje.config(text=f"'{letra}' ya fue usada", 
+                                   fg=self.estilo["advertencia"])
+            return
+        
+        # Procesar la letra
+        self.letras_usadas.append(letra)
+        
+        # Verificar si está en la palabra
+        if letra in self.palabra_secreta:
+            # Actualizar progreso
+            aciertos = 0
+            for i, l in enumerate(self.palabra_secreta):
+                if l == letra:
+                    self.progreso[i] = letra
+                    aciertos += 1
+            
+            # Actualizar display
+            self.actualizar_display_palabra()
+            self.lbl_mensaje.config(
+                text=f"¡Correcto! '{letra}' aparece {aciertos} vez{'es' if aciertos > 1 else ''}",
+                fg=self.estilo["exito"]
+            )
+            
+            # Verificar victoria
+            if "_" not in self.progreso:
+                self.finalizar_juego(victoria=True)
+                return
         else:
-            color = self.COLOR_ERROR
+            # Letra incorrecta
+            self.intentos -= 1
+            self.lbl_intentos.config(text=f"❤️  {self.intentos}/{self.intentos_totales} INTENTOS")
+            self.lbl_mensaje.config(text=f"'{letra}' no está en la palabra", 
+                                   fg=self.estilo["error"])
+            
+            # Verificar derrota
+            if self.intentos == 0:
+                self.finalizar_juego(victoria=False)
+                return
         
-        self.lbl_mensaje.config(text=mensaje, fg=color)
-        
-        # Actualizar interfaz
-        self.actualizar_interfaz()
-        
-        # Verificar fin del juego
-        if es_ganador:
-            self.finalizar_juego(victoria=True)
-        elif self.juego.intentos == 0:
-            self.finalizar_juego(victoria=False)
+        # Actualizar estadísticas
+        self.actualizar_estadisticas()
+        self.entry_letra.focus_set()
     
     def finalizar_juego(self, victoria):
         """Finaliza el juego y muestra el resultado"""
+        self.juego_activo = False
+        
         # Deshabilitar controles
-        self.entry_letra.config(state="disabled", fg=self.COLOR_TEXTO_SECUNDARIO)
-        self.btn_verificar.config(state="disabled", bg=self.COLOR_TEXTO_SECUNDARIO)
+        self.entry_letra.config(state="disabled")
+        self.btn_verificar.config(state="disabled")
         
-        # Mostrar mensaje final
+        # Mostrar resultado
         if victoria:
-            mensaje_final = f"🎉 ¡FELICIDADES! 🎉\nHas adivinado la palabra:\n{self.juego.get_palabra()}"
-            color_final = self.COLOR_EXITO
-            
-            # Efecto visual: cambiar todos los cuadros a color de éxito
-            for lbl in self.letra_labels:
-                lbl.master.config(bg=self.COLOR_EXITO, highlightbackground=self.COLOR_EXITO)
-                lbl.config(bg=self.COLOR_EXITO, fg="white")
-        else:
-            mensaje_final = f"💀 ¡GAME OVER! 💀\nLa palabra era:\n{self.juego.get_palabra()}"
-            color_final = self.COLOR_ERROR
-            
-            # Mostrar palabra completa en rojo
+            # Mostrar palabra completa en verde
             self.actualizar_display_palabra()
-            for i, lbl in enumerate(self.letra_labels):
-                letra_correcta = self.juego.palabra[i]
-                lbl.config(text=letra_correcta)
-                lbl.master.config(bg=self.COLOR_ERROR, highlightbackground=self.COLOR_ERROR)
-                lbl.config(bg=self.COLOR_ERROR, fg="white")
+            for widget in self.letters_container.winfo_children():
+                widget.config(bg=self.estilo["exito"], 
+                            highlightbackground=self.estilo["exito"])
+                widget.winfo_children()[0].config(bg=self.estilo["exito"], 
+                                                fg="white")
+            
+            self.lbl_mensaje.config(
+                text=f"🎉 ¡FELICIDADES! 🎉\nPalabra: {self.palabra_secreta}",
+                fg=self.estilo["exito"]
+            )
+        else:
+            # Mostrar palabra completa en rojo
+            for i, widget in enumerate(self.letters_container.winfo_children()):
+                letra = self.palabra_secreta[i]
+                widget.config(bg=self.estilo["error"], 
+                            highlightbackground=self.estilo["error"])
+                label = widget.winfo_children()[0]
+                label.config(text=letra, bg=self.estilo["error"], fg="white")
+            
+            self.lbl_mensaje.config(
+                text=f"💀 ¡GAME OVER! 💀\nPalabra: {self.palabra_secreta}",
+                fg=self.estilo["error"]
+            )
         
-        self.lbl_mensaje.config(text=mensaje_final, fg=color_final)
+        # Mostrar botón reiniciar
+        self.btn_reiniciar.pack(side="right", padx=10)
         
-        # Mostrar botón reiniciar centrado
-        self.btn_reiniciar.place(relx=0.5, rely=0.97, anchor="center")
-        
-        # Efecto hover para botón reiniciar
-        self.btn_reiniciar.bind("<Enter>", 
-            lambda e: self.btn_reiniciar.config(bg="#e86955"))
-        self.btn_reiniciar.bind("<Leave>", 
-            lambda e: self.btn_reiniciar.config(bg=self.COLOR_SECUNDARIO))
+        # Actualizar estadísticas finales
+        self.actualizar_estadisticas()
     
     def reiniciar_juego(self):
         """Reinicia el juego completamente"""
-        self.juego.seleccionar_palabra()
-        self.actualizar_interfaz()
-        self.lbl_mensaje.config(text="¡Nuevo juego! Ingresa tu primera letra.", fg=self.COLOR_EXITO)
-    
-    def cerrar_ventana(self, parent):
-        """Cierra la ventana del juego y muestra el menú principal"""
-        parent.deiconify()  # Mostrar ventana principal
-        self.destroy()  # Cerrar ventana del juego
+        # Reinicializar juego
+        self.iniciar_juego()
+        
+        # Habilitar controles
+        self.entry_letra.config(state="normal")
+        self.btn_verificar.config(state="normal")
+        
+        # Actualizar interfaz
+        self.lbl_intentos.config(text=f"❤️  {self.intentos}/{self.intentos_totales} INTENTOS")
+        self.lbl_mensaje.config(text="¡Nuevo juego! Ingresa tu primera letra.", 
+                               fg=self.estilo["exito"])
+        
+        # Actualizar display
+        self.actualizar_display_palabra()
+        self.actualizar_estadisticas()
+        
+        # Ocultar botón reiniciar
+        self.btn_reiniciar.pack_forget()
+        
+        # Dar foco a la entrada
+        self.entry_letra.focus_set()
+        self.juego_activo = True
