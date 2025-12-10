@@ -1,0 +1,12 @@
+{
+    "dificultad": "MEDIO",
+    "max_intentos": 6,
+    "mostrar_pistas": true,
+    "sonido_activado": false,
+    "tema_color": "azul",
+    "tiempo_limite": 0,
+    "tamano_fuente": 12,
+    "mostrar_tiempo": true,
+    "animaciones": true,
+    "palabra_completa": false
+}
