@@ -1,6 +1,6 @@
 {
-    "dificultad": "MEDIO",
-    "max_intentos": 6,
+    "dificultad": "FACIL",
+    "max_intentos": 8,
     "mostrar_pistas": true,
     "sonido_activado": false,
     "tema_color": "azul",

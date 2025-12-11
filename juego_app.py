@@ -1,4 +1,4 @@
-# juego_app.py - MODIFICACIONES
+# juego_app.py
 import tkinter as tk
 from tkinter import messagebox, Menu
 import sys
@@ -36,13 +36,8 @@ class JuegoPalabrasApp:
             "amarillo": "#fbbf24",
             "rojo": "#f87171",
             "azul": "#3b82f6",
-            "morado": "#8b5cf6",
-            "cyan": "#06b6d4",
-            "rosa": "#ec4899"
+            "morado": "#8b5cf6"
         }
-        
-        # Variable para controlar si ya se mostraron opciones post-partida
-        self.mostrando_opciones = False
         
         # Configurar ícono de ventana
         try:
@@ -67,365 +62,202 @@ class JuegoPalabrasApp:
         
         # Centrar ventana
         self.centrar_ventana()
-        
-        # Configurar ventana de opciones post-partida (inicialmente oculta)
-        self.configurar_ventana_opciones()
     
-    def configurar_ventana_opciones(self):
-        """Configura la ventana de opciones que aparece después de ganar/perder"""
-        # Crear ventana flotante (inicialmente oculta)
-        self.ventana_opciones = tk.Toplevel(self.root)
-        self.ventana_opciones.title("🎮 ¿Qué quieres hacer ahora?")
-        self.ventana_opciones.geometry("500x400")
-        self.ventana_opciones.configure(bg=self.colores["fondo_principal"])
-        self.ventana_opciones.resizable(False, False)
-        self.ventana_opciones.overrideredirect(True)  # Sin bordes
-        self.ventana_opciones.withdraw()  # Ocultar inicialmente
+    def centrar_ventana(self):
+        """Centra la ventana en la pantalla"""
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f'{width}x{height}+{x}+{y}')
+    
+    def configurar_menu(self):
+        """Configura la barra de menú de la aplicación"""
+        menubar = Menu(self.root, bg=self.colores["fondo_secundario"], fg=self.colores["texto_principal"])
+        self.root.config(menu=menubar)
         
-        # Hacer que la ventana sea modal (bloquee interacción con la ventana principal)
-        self.ventana_opciones.transient(self.root)
-        self.ventana_opciones.grab_set()
+        # Menú Archivo
+        menu_archivo = Menu(menubar, tearoff=0, bg=self.colores["fondo_secundario"], 
+                           fg=self.colores["texto_principal"], activebackground=self.colores["acento_principal"])
+        menubar.add_cascade(label="Archivo", menu=menu_archivo)
+        menu_archivo.add_command(label="Nuevo Juego", command=self.nuevo_juego, accelerator="Ctrl+N")
+        menu_archivo.add_separator()
+        menu_archivo.add_command(label="Volver al Menú Principal", command=self.volver_menu_principal)
+        menu_archivo.add_command(label="Salir", command=self.salir, accelerator="Ctrl+Q")
+        
+        # Menú Juego
+        menu_juego = Menu(menubar, tearoff=0, bg=self.colores["fondo_secundario"], 
+                         fg=self.colores["texto_principal"], activebackground=self.colores["acento_principal"])
+        menubar.add_cascade(label="Juego", menu=menu_juego)
+        
+        # Submenú Dificultad
+        menu_dificultad = Menu(menu_juego, tearoff=0, bg=self.colores["fondo_secundario"], 
+                              fg=self.colores["texto_principal"], activebackground=self.colores["acento_principal"])
+        menu_juego.add_cascade(label="Cambiar Dificultad", menu=menu_dificultad)
+        
+        self.var_dificultad_menu = tk.StringVar(value=self.config.obtener("dificultad"))
+        dificultades = [("🟢 Fácil", "FACIL"), ("🟡 Medio", "MEDIO"), ("🔴 Difícil", "DIFICIL")]
+        
+        for texto, valor in dificultades:
+            menu_dificultad.add_radiobutton(
+                label=texto, 
+                variable=self.var_dificultad_menu,
+                value=valor, 
+                command=lambda v=valor: self.cambiar_dificultad(v)
+            )
+        
+        menu_juego.add_separator()
+        menu_juego.add_command(label="Ver Ranking", command=self.mostrar_ranking)
+        menu_juego.add_command(label="Estadísticas Completas", command=self.mostrar_estadisticas_completas)
+        
+        # Menú Ayuda
+        menu_ayuda = Menu(menubar, tearoff=0, bg=self.colores["fondo_secundario"], 
+                         fg=self.colores["texto_principal"], activebackground=self.colores["acento_principal"])
+        menubar.add_cascade(label="Ayuda", menu=menu_ayuda)
+        menu_ayuda.add_command(label="Cómo Jugar", command=self.mostrar_ayuda)
+        menu_ayuda.add_command(label="Reglas del Juego", command=self.mostrar_reglas)
+        menu_ayuda.add_separator()
+        menu_ayuda.add_command(label="Acerca de...", command=self.mostrar_acerca_de)
+        
+        # Atajos de teclado
+        self.root.bind("<Control-n>", lambda e: self.nuevo_juego())
+        self.root.bind("<Control-N>", lambda e: self.nuevo_juego())
+        self.root.bind("<Control-q>", lambda e: self.salir())
+        self.root.bind("<Control-Q>", lambda e: self.salir())
+        self.root.bind("<F1>", lambda e: self.mostrar_ayuda())
+        self.root.bind("<F2>", lambda e: self.nuevo_juego())
+        self.root.bind("<Escape>", lambda e: self.volver_menu_principal())
+    
+    def configurar_interfaz(self):
+        """Configura la interfaz principal de la aplicación"""
+        # Configurar color de fondo
+        self.root.configure(bg=self.colores["fondo_principal"])
         
         # Frame principal
-        main_frame = tk.Frame(self.ventana_opciones, bg=self.colores["fondo_principal"], 
-                             padx=30, pady=30)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame = tk.Frame(self.root, bg=self.colores["fondo_principal"])
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Título según resultado
-        self.label_titulo_opciones = tk.Label(
-            main_frame,
-            text="",
-            font=("Arial", 20, "bold"),
-            bg=self.colores["fondo_principal"],
-            fg=self.colores["texto_principal"],
-            pady=20
+        # Frame superior (cabecera)
+        header_frame = tk.Frame(main_frame, bg=self.colores["fondo_terciario"], height=100)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+        header_frame.pack_propagate(False)
+        
+        # Título principal
+        titulo_label = tk.Label(
+            header_frame,
+            text="🎮 DESAFÍO DE PALABRAS",
+            font=("Arial", 28, "bold"),
+            fg=self.colores["acento_principal"],
+            bg=self.colores["fondo_terciario"]
         )
-        self.label_titulo_opciones.pack()
+        titulo_label.pack(expand=True)
         
-        # Mensaje de resultado
-        self.label_mensaje_opciones = tk.Label(
-            main_frame,
-            text="",
-            font=("Arial", 12),
-            bg=self.colores["fondo_principal"],
+        # Subtítulo
+        self.subtitulo_label = tk.Label(
+            header_frame,
+            text=f"En juego | Dificultad: {self.config.obtener('dificultad')}",
+            font=("Arial", 11, "italic"),
             fg=self.colores["texto_secundario"],
-            wraplength=400,
+            bg=self.colores["fondo_terciario"]
+        )
+        self.subtitulo_label.pack(pady=(0, 10))
+        
+        # Frame para contenido principal (2 columnas)
+        content_frame = tk.Frame(main_frame, bg=self.colores["fondo_principal"])
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Columna izquierda (75%) - Juego
+        left_frame = tk.Frame(content_frame, bg=self.colores["fondo_principal"])
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
+        # Panel de juego
+        game_container = tk.Frame(left_frame, bg=self.colores["fondo_secundario"], 
+                                 relief=tk.RAISED, bd=3)
+        game_container.pack(fill=tk.BOTH, expand=True)
+        
+        self.panel_juego = PanelJuego(game_container, self.juego_logica, 
+                                     self.procesar_intento_jugador, self.colores)
+        self.panel_juego.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        
+        # Columna derecha (25%) - Paneles laterales
+        right_frame = tk.Frame(content_frame, bg=self.colores["fondo_principal"], width=300)
+        right_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        right_frame.pack_propagate(False)
+        
+        # Panel de estadísticas (ahora más grande)
+        stats_container = tk.LabelFrame(
+            right_frame,
+            text="📊 PANEL DE ESTADÍSTICAS",
+            font=("Arial", 11, "bold"),
+            bg=self.colores["fondo_secundario"],
+            fg=self.colores["texto_secundario"],
+            padx=10,
+            pady=10,
+            relief=tk.RAISED,
+            bd=2
+        )
+        stats_container.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Hacer el panel de estadísticas más alto
+        stats_container.pack_propagate(False)
+        stats_container.config(height=400)
+
+        self.panel_estadisticas = PanelEstadisticas(stats_container, self.gestor_db, self.colores)
+        self.panel_estadisticas.pack(fill=tk.BOTH, expand=True)
+        
+        # Panel de configuración
+        config_container = tk.LabelFrame(
+            right_frame,
+            text="⚙️ Configuración",
+            font=("Arial", 11, "bold"),
+            bg=self.colores["fondo_secundario"],
+            fg=self.colores["texto_secundario"],
+            padx=10,
             pady=10
         )
-        self.label_mensaje_opciones.pack()
+        config_container.pack(fill=tk.BOTH, expand=True)
         
-        # Frame para estadísticas de la partida
-        self.frame_stats_partida = tk.Frame(main_frame, bg=self.colores["fondo_secundario"], 
-                                           relief=tk.RAISED, bd=2, padx=20, pady=15)
-        self.frame_stats_partida.pack(fill=tk.X, pady=20)
-        
-        # Labels para estadísticas
-        self.label_palabra = tk.Label(
-            self.frame_stats_partida,
-            text="",
-            font=("Arial", 14, "bold"),
-            bg=self.colores["fondo_secundario"],
-            fg=self.colores["acento_principal"]
+        self.panel_configuracion = PanelConfiguracion(
+            config_container,
+            self.config,
+            self.on_configuracion_cambiada,
+            self.colores
         )
-        self.label_palabra.pack()
+        self.panel_configuracion.pack(fill=tk.BOTH, expand=True)
         
-        self.label_intentos_stats = tk.Label(
-            self.frame_stats_partida,
-            text="",
-            font=("Arial", 12),
-            bg=self.colores["fondo_secundario"],
-            fg=self.colores["texto_secundario"]
-        )
-        self.label_intentos_stats.pack()
+        # Frame inferior (botones de control)
+        control_frame = tk.Frame(main_frame, bg=self.colores["fondo_principal"], height=60)
+        control_frame.pack(fill=tk.X, pady=(10, 0))
+        control_frame.pack_propagate(False)
         
-        self.label_tiempo_stats = tk.Label(
-            self.frame_stats_partida,
-            text="",
-            font=("Arial", 12),
-            bg=self.colores["fondo_secundario"],
-            fg=self.colores["texto_secundario"]
-        )
-        self.label_tiempo_stats.pack()
-        
-        # Frame para botones de opciones
-        frame_botones = tk.Frame(main_frame, bg=self.colores["fondo_principal"])
-        frame_botones.pack(fill=tk.X, pady=20)
-        
-        # Botones de opciones
-        botones_opciones = [
-            {
-                "text": "🔄 JUGAR DE NUEVO",
-                "command": self.opcion_nuevo_juego,
-                "color": self.colores["verde"],
-                "tooltip": "Jugar otra partida con la misma dificultad"
-            },
-            {
-                "text": "🎮 CAMBIAR DIFICULTAD",
-                "command": self.opcion_cambiar_dificultad,
-                "color": self.colores["azul"],
-                "tooltip": "Cambiar dificultad y jugar"
-            },
-            {
-                "text": "📊 VER ESTADÍSTICAS",
-                "command": self.opcion_ver_estadisticas,
-                "color": self.colores["amarillo"],
-                "tooltip": "Ver estadísticas detalladas"
-            },
-            {
-                "text": "🏠 VOLVER AL MENÚ",
-                "command": self.opcion_volver_menu,
-                "color": self.colores["morado"],
-                "tooltip": "Volver al menú principal"
-            }
+        # Botones de control
+        botones_info = [
+            ("🔄 NUEVO JUEGO", self.nuevo_juego, self.colores["verde"], "white"),
+            ("🏠 MENÚ PRINCIPAL", self.volver_menu_principal, self.colores["azul"], "white"),
+            ("🏆 RANKING", self.mostrar_ranking, self.colores["amarillo"], "#212529"),
+            ("📈 ESTADÍSTICAS", self.mostrar_estadisticas_completas, self.colores["acento_secundario"], "white"),
+            ("❓ AYUDA", self.mostrar_ayuda, self.colores["morado"], "white"),
+            ("❌ SALIR", self.salir, self.colores["rojo"], "white")
         ]
         
-        for boton_info in botones_opciones:
-            # Frame para cada botón
-            btn_frame = tk.Frame(frame_botones, bg=self.colores["fondo_principal"])
-            btn_frame.pack(fill=tk.X, pady=8)
-            
-            # Botón
+        for texto, comando, bg_color, fg_color in botones_info:
             btn = tk.Button(
-                btn_frame,
-                text=boton_info["text"],
-                font=("Arial", 11, "bold"),
-                bg=boton_info["color"],
-                fg="white",
-                padx=20,
-                pady=12,
-                command=boton_info["command"],
+                control_frame,
+                text=texto,
+                font=("Arial", 10, "bold"),
+                bg=bg_color,
+                fg=fg_color,
+                padx=15,
+                pady=8,
+                command=comando,
                 cursor="hand2",
                 relief=tk.RAISED,
                 bd=2,
-                width=25
+                activebackground=bg_color,
+                activeforeground=fg_color
             )
-            btn.pack()
-            
-            # Tooltip
-            tk.Label(
-                btn_frame,
-                text=boton_info["tooltip"],
-                font=("Arial", 8, "italic"),
-                bg=self.colores["fondo_principal"],
-                fg=self.colores["texto_secundario"]
-            ).pack(pady=(2, 0))
-    
-    def mostrar_opciones_post_partida(self, resultado: dict):
-        """Muestra la ventana de opciones después de ganar/perder"""
-        if self.mostrando_opciones:
-            return
-        
-        self.mostrando_opciones = True
-        
-        # Configurar título y mensaje según resultado
-        if resultado["estado"] == "victoria":
-            self.label_titulo_opciones.config(
-                text="🎉 ¡FELICIDADES! ¡HAS GANADO!",
-                fg=self.colores["verde"]
-            )
-            self.label_mensaje_opciones.config(
-                text="¡Excelente trabajo! Adivinaste la palabra correctamente."
-            )
-        else:  # derrota
-            self.label_titulo_opciones.config(
-                text="💀 ¡FIN DEL JUEGO!",
-                fg=self.colores["rojo"]
-            )
-            self.label_mensaje_opciones.config(
-                text="No te rindas, ¡inténtalo de nuevo!"
-            )
-        
-        # Actualizar estadísticas de la partida
-        self.label_palabra.config(
-            text=f"Palabra: {resultado.get('palabra', '')}"
-        )
-        self.label_intentos_stats.config(
-            text=f"Intentos usados: {resultado.get('intentos', 0)}"
-        )
-        self.label_tiempo_stats.config(
-            text=f"Tiempo: {resultado.get('tiempo', 0)} segundos"
-        )
-        
-        # Posicionar ventana en el centro de la pantalla
-        self.ventana_opciones.update_idletasks()
-        width = self.ventana_opciones.winfo_width()
-        height = self.ventana_opciones.winfo_height()
-        
-        # Obtener posición de la ventana principal
-        main_x = self.root.winfo_x()
-        main_y = self.root.winfo_y()
-        main_width = self.root.winfo_width()
-        main_height = self.root.winfo_height()
-        
-        # Calcular posición centrada dentro de la ventana principal
-        x = main_x + (main_width // 2) - (width // 2)
-        y = main_y + (main_height // 2) - (height // 2)
-        
-        self.ventana_opciones.geometry(f"{width}x{height}+{x}+{y}")
-        
-        # Mostrar ventana
-        self.ventana_opciones.deiconify()
-        
-        # Traer al frente
-        self.ventana_opciones.lift()
-        self.ventana_opciones.focus_force()
-    
-    def ocultar_opciones_post_partida(self):
-        """Oculta la ventana de opciones"""
-        self.mostrando_opciones = False
-        self.ventana_opciones.withdraw()
-    
-    def opcion_nuevo_juego(self):
-        """Opción: Jugar de nuevo con misma dificultad"""
-        self.ocultar_opciones_post_partida()
-        self.nuevo_juego()
-    
-    def opcion_cambiar_dificultad(self):
-        """Opción: Cambiar dificultad antes de jugar"""
-        self.ocultar_opciones_post_partida()
-        self.mostrar_selector_dificultad()
-    
-    def opcion_ver_estadisticas(self):
-        """Opción: Ver estadísticas detalladas"""
-        self.ocultar_opciones_post_partida()
-        self.panel_estadisticas.mostrar_detalles_completos()
-    
-    def opcion_volver_menu(self):
-        """Opción: Volver al menú principal"""
-        self.ocultar_opciones_post_partida()
-        self.volver_menu_principal()
-    
-    def mostrar_selector_dificultad(self):
-        """Muestra un selector de dificultad antes de nuevo juego"""
-        # Crear ventana emergente para seleccionar dificultad
-        selector_window = tk.Toplevel(self.root)
-        selector_window.title("🎮 Seleccionar Dificultad")
-        selector_window.geometry("400x300")
-        selector_window.configure(bg=self.colores["fondo_principal"])
-        selector_window.resizable(False, False)
-        
-        # Centrar ventana
-        selector_window.update_idletasks()
-        width = selector_window.winfo_width()
-        height = selector_window.winfo_height()
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        selector_window.geometry(f'{width}x{height}+{x}+{y}')
-        
-        # Frame principal
-        main_frame = tk.Frame(selector_window, bg=self.colores["fondo_principal"], 
-                             padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Título
-        tk.Label(
-            main_frame,
-            text="🎮 SELECCIONAR DIFICULTAD",
-            font=("Arial", 16, "bold"),
-            fg=self.colores["acento_principal"],
-            bg=self.colores["fondo_principal"],
-            pady=10
-        ).pack()
-        
-        tk.Label(
-            main_frame,
-            text="Elige la dificultad para la próxima partida:",
-            font=("Arial", 11),
-            fg=self.colores["texto_secundario"],
-            bg=self.colores["fondo_principal"],
-            pady=10
-        ).pack()
-        
-        # Variable para dificultad seleccionada
-        dificultad_seleccionada = tk.StringVar(value=self.config.obtener("dificultad"))
-        
-        # Frame para opciones de dificultad
-        frame_opciones = tk.Frame(main_frame, bg=self.colores["fondo_principal"], pady=20)
-        frame_opciones.pack()
-        
-        dificultades = [
-            ("FACIL", "🟢 FÁCIL", "Palabras cortas\n8 intentos\nPistas generosas", 
-             self.colores["verde"]),
-            ("MEDIO", "🟡 MEDIO", "Palabras medias\n6 intentos\nPistas moderadas", 
-             self.colores["amarillo"]),
-            ("DIFICIL", "🔴 DIFÍCIL", "Palabras largas\n4 intentos\nPistas limitadas", 
-             self.colores["rojo"])
-        ]
-        
-        for valor, texto, descripcion, color in dificultades:
-            # Frame para cada opción
-            opcion_frame = tk.Frame(frame_opciones, bg=self.colores["fondo_principal"])
-            opcion_frame.pack(fill=tk.X, pady=8)
-            
-            # Radio button
-            rb = tk.Radiobutton(
-                opcion_frame,
-                text=texto,
-                variable=dificultad_seleccionada,
-                value=valor,
-                font=("Arial", 12, "bold"),
-                bg=self.colores["fondo_principal"],
-                fg=color,
-                selectcolor=self.colores["fondo_principal"],
-                activebackground=self.colores["fondo_principal"],
-                activeforeground=color,
-                cursor="hand2"
-            )
-            rb.pack(side=tk.LEFT)
-            
-            # Descripción
-            tk.Label(
-                opcion_frame,
-                text=descripcion,
-                font=("Arial", 9),
-                bg=self.colores["fondo_principal"],
-                fg=self.colores["texto_secundario"],
-                justify=tk.LEFT
-            ).pack(side=tk.LEFT, padx=(20, 0))
-        
-        # Frame para botones
-        frame_botones = tk.Frame(main_frame, bg=self.colores["fondo_principal"], pady=20)
-        frame_botones.pack()
-        
-        # Botón aceptar
-        tk.Button(
-            frame_botones,
-            text="✅ ACEPTAR Y JUGAR",
-            font=("Arial", 11, "bold"),
-            bg=self.colores["verde"],
-            fg="white",
-            padx=20,
-            pady=10,
-            command=lambda: self.aplicar_dificultad_y_jugar(
-                dificultad_seleccionada.get(), selector_window
-            ),
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=10)
-        
-        # Botón cancelar
-        tk.Button(
-            frame_botones,
-            text="❌ CANCELAR",
-            font=("Arial", 11),
-            bg=self.colores["rojo"],
-            fg="white",
-            padx=20,
-            pady=10,
-            command=selector_window.destroy,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=10)
-    
-    def aplicar_dificultad_y_jugar(self, dificultad: str, ventana_selector):
-        """Aplica la dificultad seleccionada y comienza nuevo juego"""
-        # Cambiar dificultad
-        self.config.establecer_dificultad(dificultad)
-        self.juego_logica.cambiar_dificultad(dificultad)
-        
-        # Cerrar ventana de selector
-        ventana_selector.destroy()
-        
-        # Iniciar nuevo juego
-        self.nuevo_juego()
+            btn.pack(side=tk.LEFT, padx=5, pady=10)
     
     def procesar_intento_jugador(self, entrada: str):
         """Procesa un intento del jugador"""
@@ -436,40 +268,269 @@ class JuegoPalabrasApp:
         
         # Manejar resultados especiales
         if resultado["estado"] == "victoria":
-            # Actualizar estadísticas
+            messagebox.showinfo("🎉 ¡VICTORIA!", resultado["mensaje"])
             self.panel_estadisticas.actualizar_estadisticas()
             self.actualizar_subtitulo(victoria=True)
             
-            # Mostrar opciones post-partida después de un breve delay
-            self.root.after(800, lambda: self.mostrar_opciones_post_partida(resultado))
-            
         elif resultado["estado"] == "derrota":
-            # Actualizar estadísticas
+            messagebox.showerror("💀 ¡FIN DEL JUEGO!", 
+                               f"{resultado['mensaje']}\n\n"
+                               f"Intentos usados: {resultado['intentos']}\n"
+                               f"Tiempo: {resultado['tiempo']} segundos")
             self.panel_estadisticas.actualizar_estadisticas()
             self.actualizar_subtitulo(victoria=False)
             
-            # Mostrar opciones post-partida después de un breve delay
-            self.root.after(800, lambda: self.mostrar_opciones_post_partida(resultado))
-            
         elif resultado["estado"] == "error":
-            # Solo mostrar error, no opciones
-            pass
+            messagebox.showwarning("⚠️ Atención", resultado["mensaje"])
     
-    # Resto del código permanece igual...
     def nuevo_juego(self):
         """Inicia un nuevo juego"""
-        # Ocultar ventana de opciones si está visible
-        if self.mostrando_opciones:
-            self.ocultar_opciones_post_partida()
-        
-        # Reiniciar juego
         self.juego_logica.reiniciar_juego()
         self.panel_juego.actualizar_panel()
         self.actualizar_subtitulo()
         self.panel_juego.focus_entrada()
         
         # Actualizar dificultad en menú
-        if hasattr(self, 'var_dificultad_menu'):
-            self.var_dificultad_menu.set(self.config.obtener("dificultad"))
+        self.var_dificultad_menu.set(self.config.obtener("dificultad"))
     
-    # Resto del código sigue igual...
+    def on_configuracion_cambiada(self):
+        """Se ejecuta cuando cambia la configuración"""
+        # Actualizar la lógica del juego con nueva configuración
+        self.juego_logica.max_intentos = self.config.obtener("max_intentos")
+        self.juego_logica.cambiar_dificultad(self.config.obtener("dificultad"))
+        
+        # Actualizar subtítulo
+        self.actualizar_subtitulo()
+        
+        # Actualizar dificultad en menú
+        self.var_dificultad_menu.set(self.config.obtener("dificultad"))
+        
+        # Si hay un juego en curso, preguntar si reiniciar
+        if not self.juego_logica.game_over:
+            respuesta = messagebox.askyesno(
+                "🔄 Reiniciar Juego",
+                "La configuración ha cambiado.\n"
+                "¿Quieres comenzar un nuevo juego con la nueva configuración?"
+            )
+            if respuesta:
+                self.nuevo_juego()
+    
+    def cambiar_dificultad(self, dificultad: str):
+        """Cambia la dificultad del juego"""
+        self.config.establecer_dificultad(dificultad)
+        self.panel_configuracion.var_dificultad.set(dificultad)
+        self.on_configuracion_cambiada()
+    
+    def actualizar_subtitulo(self, victoria: bool = None):
+        """Actualiza el subtítulo según el estado del juego"""
+        dificultad = self.config.obtener("dificultad")
+        texto_base = f"En juego | Dificultad: {dificultad}"
+        
+        if victoria is True:
+            texto_extra = " | ¡ÚLTIMA PARTIDA: VICTORIA! 🎉"
+        elif victoria is False:
+            texto_extra = " | ¡ÚLTIMA PARTIDA: DERROTA! 💀"
+        else:
+            texto_extra = ""
+        
+        self.subtitulo_label.config(text=texto_base + texto_extra)
+    
+    def volver_menu_principal(self):
+        """Vuelve al menú principal"""
+        respuesta = messagebox.askyesno(
+            "🏠 Volver al Menú Principal",
+            "¿Quieres volver al menú principal?\n\n"
+            "Tu juego actual se perderá."
+        )
+        
+        if respuesta:
+            self.root.destroy()
+    
+    def mostrar_ayuda(self):
+        """Muestra la ayuda del juego"""
+        ayuda_texto = """
+        🎮 CÓMO JUGAR A DESAFÍO DE PALABRAS 🎮
+
+        OBJETIVO:
+        Adivinar la palabra secreta antes de agotar todos los intentos.
+
+        MECÁNICA DE JUEGO:
+        1. Introduce una letra en el campo de texto y presiona "ADIVINAR" o Enter
+        2. Si la letra está en la palabra, se revelará en su posición
+        3. Si la letra NO está, perderás un intento
+        4. Adivina todas las letras antes de agotar los intentos para ganar
+
+        DIFICULTADES:
+        • 🟢 FÁCIL: Palabras cortas, 8 intentos, pistas generosas
+        • 🟡 MEDIO: Palabras medias, 6 intentos, pistas moderadas
+        • 🔴 DIFÍCIL: Palabras largas, 4 intentos, pistas limitadas
+
+        PISTAS:
+        • Las pistas aparecen automáticamente después de varios intentos
+        • Incluyen: longitud, categoría, primera/última letra, etc.
+        • Puedes desactivarlas en Configuración
+
+        CONSEJOS:
+        • Empieza con vocales comunes (A, E, I, O, U)
+        • Luego prueba consonantes comunes (R, S, T, L, N)
+        • Observa las letras incorrectas para descartar opciones
+        • Usa las pistas estratégicamente
+
+        ¡DIVIÉRTETE Y MEJORA TU VOCABULARIO! 📚
+        """
+        messagebox.showinfo("🎮 Ayuda del Juego", ayuda_texto)
+    
+    def mostrar_reglas(self):
+        """Muestra las reglas completas del juego"""
+        reglas_texto = """
+        📜 REGLAS COMPLETAS DEL JUEGO 📜
+
+        1. CONFIGURACIÓN INICIAL:
+           • Selecciona la dificultad (Fácil, Medio, Difícil)
+           • Configura el número máximo de intentos (3-15)
+           • Ajusta otras opciones en el panel de Configuración
+
+        2. DESARROLLO DEL JUEGO:
+           • Se te asignará una palabra secreta según la dificultad
+           • Solo puedes ingresar una letra por intento
+           • Las letras incorrectas se mostrarán en rojo
+           • Cada letra incorrecta consume un intento
+
+        3. CONDICIONES DE VICTORIA:
+           • Adivinar todas las letras de la palabra secreta
+           • Debes hacerlo antes de agotar los intentos máximos
+
+        4. CONDICIONES DE DERROTA:
+           • Agotar todos los intentos sin adivinar la palabra
+           • El juego termina automáticamente
+
+        5. PUNTUACIÓN Y ESTADÍSTICAS:
+           • Menos intentos = mejor puntuación
+           • Menos tiempo = mejor puntuación
+           • Las victorias se registran en el ranking
+           • Puedes ver tus estadísticas en tiempo real
+
+        6. CARACTERÍSTICAS ESPECIALES:
+           • Sistema de pistas progresivas
+           • Temporizador opcional
+           • Ranking de mejores partidas
+           • Estadísticas por dificultad
+           • Personalización completa
+
+        🏆 EL RANKING SE CALCULA POR:
+        1. Menor número de intentos
+        2. Menor tiempo de resolución
+        3. Mayor dificultad (bonificación)
+
+        ¡BUENA SUERTE Y QUE GANE EL MEJOR! 🍀
+        """
+        messagebox.showinfo("📜 Reglas del Juego", reglas_texto)
+    
+    def mostrar_acerca_de(self):
+        """Muestra información acerca del juego"""
+        acerca_texto = f"""
+        🎮 DESAFÍO DE PALABRAS
+        Versión 2.0 - El Juego Definitivo
+        
+        DESCRIPCIÓN:
+        Juego educativo y entretenido diseñado para mejorar
+        el vocabulario mientras te diviertes adivinando palabras.
+        
+        CARACTERÍSTICAS PRINCIPALES:
+        ✅ 3 niveles de dificultad (Fácil, Medio, Difícil)
+        ✅ Estadísticas en tiempo real
+        ✅ Base de datos con +60 palabras
+        
+        COLORES DEL TEMA:
+        • Fondo principal: {self.colores['fondo_principal']}
+        • Fondo secundario: {self.colores['fondo_secundario']}
+        • Color de acento: {self.colores['acento_principal']}
+        • Color secundario: {self.colores['acento_secundario']}
+        
+        DESARROLLADO CON:
+        • Python 3.x
+        • Tkinter (Interfaz gráfica)
+        • SQLite (Base de datos)
+        • JSON (Configuración)
+        
+        CRÉDITOS:
+        Product owner: Breyler Emanuel Correa Ruiz
+        Scrum Master: Andrés Felipe Contreras Delgado
+        Develop team: Abril Ariadna Meneses Duran
+
+
+        📚 Diccionario: Palabras comunes y técnicas
+        
+        LICENCIA:
+        © 2025 Juego de Palabras
+        Software educativo de código abierto
+        
+        ¡GRACIAS POR JUGAR! 🎉
+        """
+        messagebox.showinfo("ℹ️ Acerca de Desafío de Palabras", acerca_texto)
+    
+    def mostrar_ranking(self):
+        """Muestra el ranking de mejores partidas"""
+        self.panel_estadisticas.mostrar_ranking()
+    
+    def mostrar_estadisticas_completas(self):
+        """Muestra estadísticas completas en una ventana aparte"""
+        try:
+            stats = self.gestor_db.obtener_estadisticas()
+            
+            # Crear texto detallado
+            texto_estadisticas = f"""
+            📊 ESTADÍSTICAS COMPLETAS DEL JUEGO
+            
+            ESTADÍSTICAS GENERALES:
+            • ✅ Victorias totales: {stats['victorias']}
+            • ❌ Derrotas totales: {stats['derrotas']}
+            • 🎮 Partidas jugadas: {stats['partidas_totales']}
+            • 🎯 Promedio de intentos (victorias): {stats['promedio_intentos']:.2f}
+            
+            ESTADÍSTICAS POR DIFICULTAD:
+            """
+            
+            for dificultad, datos in stats["por_dificultad"].items():
+                if datos['total'] > 0:
+                    porcentaje = datos['porcentaje']
+                    texto_estadisticas += f"""
+            • {dificultad.upper()}:
+              - Victorias: {datos['victorias']}/{datos['total']}
+              - Porcentaje de éxito: {porcentaje}%
+              - Ratio: {datos['victorias']}:{datos['total']-datos['victorias']}
+                    """
+                else:
+                    texto_estadisticas += f"""
+            • {dificultad.upper()}:
+              - Aún no se han jugado partidas
+                    """
+            
+            texto_estadisticas += f"""
+            
+            RENDIMIENTO GENERAL:
+            • Porcentaje total de victorias: {(stats['victorias']/stats['partidas_totales']*100) if stats['partidas_totales'] > 0 else 0:.1f}%
+            • Mejor dificultad: {max(stats['por_dificultad'].items(), key=lambda x: x[1]['porcentaje'])[0].upper() if any(d['total'] > 0 for d in stats['por_dificultad'].values()) else 'N/A'}
+            
+            CONSEJOS:
+            • Juega más partidas para mejorar tus estadísticas
+            • Intenta diferentes dificultades
+            • Revisa el ranking para ver los mejores resultados
+            """
+            
+            messagebox.showinfo("📈 Estadísticas Completas", texto_estadisticas)
+            
+        except Exception as e:
+            messagebox.showerror("❌ Error", f"No se pudieron cargar las estadísticas:\n{e}")
+    
+    def salir(self):
+        """Cierra la aplicación con confirmación"""
+        respuesta = messagebox.askyesno(
+            "👋 Salir del Juego",
+            "¿Estás seguro de que quieres salir de Desafío de Palabras?\n\n"
+            "Tu progreso se perderá, pero las estadísticas se guardarán."
+        )
+        
+        if respuesta:
+            self.root.quit()
+            self.root.destroy()

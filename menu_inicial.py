@@ -660,7 +660,7 @@ class MenuInicial:
     def mostrar_acerca_de(self):
         """Muestra información acerca del juego"""
         acerca_texto = """
-        🎮 DESAFÍO DE PALABRAS v2.0
+            DESAFÍO DE PALABRAS v2.0
 
         DESCRIPCIÓN:
         Juego educativo diseñado para mejorar el vocabulario
@@ -671,7 +671,6 @@ class MenuInicial:
         ✅ Sistema de estadísticas
         ✅ Ranking de mejores jugadores
         ✅ Configuración personalizable
-        ✅ Interfaz moderna y amigable
 
         DESARROLLADO CON:
         • Python 3.x
@@ -679,10 +678,11 @@ class MenuInicial:
         • SQLite para la base de datos
 
         CRÉDITOS:
-        Desarrollado como proyecto educativo
-        para mejorar habilidades de programación.
+        Product owner: Breyler Emanuel Correa Ruiz
+        Scrum Master: Andrés Felipe Contreras Delgado
+        Developet Team: Abril Ariadna Meneses Duran
 
-        © 2024 - Todos los derechos reservados
+         2025 
 
         ¡GRACIAS POR JUGAR! 🎉
         """
